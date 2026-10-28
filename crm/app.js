@@ -78,6 +78,15 @@
     return `<div class="bl"><span>${esc(name)}</span><span>${fmt(used)} / ${fmt(total)} (${p}%)</span></div><div class="bar"><i class="${cls(p)}" style="width:${p}%"></i></div>`;
   };
 
+  // Primary = the telecom number (line); secondary = any other number on the customer record.
+  const fmtNo = (n) => "+" + String(n).replace(/\D/g, "");
+  function phones(c) {
+    const primary = c.external_ref || c.mobile_no || c.mobile_no2;
+    const seen = new Set([String(primary || "").replace(/\D/g, "")]);
+    const others = [c.mobile_no, c.mobile_no2].filter((n) => { const d = String(n || "").replace(/\D/g, ""); if (!d || seen.has(d)) return false; seen.add(d); return true; });
+    return (primary ? `<span><b>Primary</b> ${esc(fmtNo(primary))}</span>` : "") + others.map((n) => `<span><b>Secondary</b> ${esc(fmtNo(n))}</span>`).join("");
+  }
+
   // ---- render ----------------------------------------------------------------------
   function show(html) { $("main").innerHTML = html; }
 
@@ -123,7 +132,7 @@
     show(`
       <section class="who"><div class="avatar">${esc(ini)}</div>
         <div><h2>${esc(c.name)} ${vip ? '<span class="tag vip">VIP</span>' : ""}</h2>
-          <div class="meta"><span>ID ${esc(c.customer_id)}</span><span>${esc(c.mobile_no ? "+" + String(c.mobile_no).replace(/^\+/, "") : "")}</span><span>${esc(c.email)}</span><span>${esc((v.customer && v.customer.service_area) || c.city || "")}</span>${v.customer && v.customer.tenure_months != null ? `<span>${esc(v.customer.tenure_months)} months with us</span>` : ""}</div></div>
+          <div class="meta"><span>ID ${esc(c.customer_id)}</span>${phones(c)}<span>${esc(c.email)}</span><span>${esc((v.customer && v.customer.service_area) || c.city || "")}</span>${v.customer && v.customer.tenure_months != null ? `<span>${esc(v.customer.tenure_months)} months with us</span>` : ""}</div></div>
       </section>
       ${s.headline ? `<div class="headline">${esc(s.headline)}</div>` : ""}
       <div class="cards">${cards}</div>

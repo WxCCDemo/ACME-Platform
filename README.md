@@ -33,6 +33,10 @@ Browser (this site)  --Bearer crm_key-->  Edge Function crm-api  -->  platform.a
 * The search is exact match only: no listing or browsing of customers.
 * No login screen by design (the demo runs from any internet connection). Revoke or rotate the key if the link leaks (see "Rotate the key").
 
+## Phone numbers shown
+
+**Primary** = the customer's telecom number (the line). **Secondary** = any other number on the customer record (`mobile_no`, `mobile_no2`) that differs from it. Search matches all of them.
+
 ## Search box
 
 One box, the service decides what you typed:
