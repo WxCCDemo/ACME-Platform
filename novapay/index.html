@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovaPay Secure Checkout</title>
+<style>
+:root{--navy:#0b2a5b;--cyan:#00a9e8;--bg:#eef3fa;--card:#fff;--ink:#1b2a41;--mute:#62708a;--line:#dfe6f1;--ok:#1a9d5b;--bad:#d6334a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,#e3edf9,var(--bg));color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:grid;place-items:start center;padding:24px 14px}
+.wrap{width:min(440px,100%)}
+.brand{display:flex;align-items:center;justify-content:space-between;margin:4px 4px 14px}
+.brand img{height:38px}
+.np{font-weight:800;color:var(--navy);letter-spacing:.02em}.np span{color:var(--cyan)}
+.card{background:var(--card);border-radius:18px;box-shadow:0 10px 40px rgba(11,42,91,.12);padding:24px}
+.amount{text-align:center;padding:6px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.amount .l{color:var(--mute);font-size:13px}.amount .v{font-size:36px;font-weight:750;color:var(--navy)}
+.amount .d{color:var(--mute);font-size:13px}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fbfdff;color:var(--ink)}
+input:focus{outline:2px solid var(--cyan);border-color:transparent}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{width:100%;margin-top:20px;padding:13px;border:0;border-radius:12px;background:var(--navy);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button:hover{background:#12417f}button:disabled{opacity:.6;cursor:default}
+.demo{margin-top:14px;font-size:12px;color:var(--mute);text-align:center}
+.state{text-align:center;padding:14px 0}
+.state h2{margin:10px 0 4px}.state p{color:var(--mute);margin:4px 0}
+.tick{width:64px;height:64px;border-radius:50%;margin:0 auto;display:grid;place-items:center;font-size:34px;color:#fff;background:var(--ok)}
+.tick.bad{background:var(--bad)}.tick.wait{background:var(--mute)}
+.code{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--bg);font-family:ui-monospace,Menlo,monospace;font-weight:700;letter-spacing:.06em}
+.err{color:var(--bad);font-size:13px;margin-top:10px;text-align:center;min-height:1em}
+.hide{display:none}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1526;--card:#142038;--ink:#e6edf8;--mute:#9aa9c4;--line:#243453}body{background:linear-gradient(180deg,#0a1222,var(--bg))}input{background:#0f1a2f}.amount .v,.np{color:#fff}.brand img{background:#fff;border-radius:8px;padding:2px 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="../assets/acme-telecom-logo.png" alt="ACME Telecom"><div class="np">Nova<span>Pay</span> · Secure Checkout</div></div>
+  <div class="card" id="card"><div class="state"><p>Loading your payment…</p></div></div>
+  <p class="demo">Demo checkout. No real card is charged. Use any card number, for example 4242 4242 4242 4242.</p>
+</div>
+
+<script>
+// Publishable settings: the key below can only read or pay a session when the payment link's own token is supplied.
+const API = "https://bleybpoyrdbmqsfyylcj.supabase.co/functions/v1/pay-api";
+const KEY = "pay_9c9a8fa09c26e70f2a5a17533d9e14232f4978d8816dffc7";
+
+const q = new URLSearchParams(location.search);
+const vertical = q.get("vertical") || "telecom", sid = q.get("session"), token = q.get("token");
+const $ = (id) => document.getElementById(id), card = $("card");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = (n, cur) => (cur === "SGD" || !cur ? "S$" : cur + " ") + Number(n).toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const what = { bill: "Bill payment", topup: "Prepaid top-up" };
+
+async function call(action, extra) {
+  const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + KEY },
+    body: JSON.stringify({ action, vertical, session_id: sid, token, ...extra }) });
+  let j = {}; try { j = await r.json(); } catch {}
+  return j;
+}
+function state(kind, title, body, extra = "") {
+  const icon = { ok: "✓", bad: "!", wait: "…" }[kind];
+  card.innerHTML = `<div class="state"><div class="tick ${kind === "ok" ? "" : kind}">${icon}</div><h2>${esc(title)}</h2><p>${esc(body)}</p>${extra}</div>`;
+}
+function done(s) {
+  state("ok", "Payment successful", `${money(s.amount, s.currency)} paid. You can close this page and return to your conversation.`,
+        s.confirmation_code ? `<div class="code">${esc(s.confirmation_code)}</div><p>Confirmation code</p>` : "");
+}
+
+function form(s) {
+  const first = s.customer_first_name ? esc(s.customer_first_name) : "";
+  card.innerHTML = `
+    <div class="amount"><div class="l">${first ? "Hi " + first + ", you're paying" : "You're paying"}</div><div class="v">${money(s.amount, s.currency)}</div>
+      <div class="d">${esc(what[s.reference_type] || "Payment")}${s.reference_type === "bill" ? " · bill #" + esc(s.reference_id) : ""}</div></div>
+    <form id="f" autocomplete="off">
+      <label for="name">Name on card</label><input id="name" required placeholder="${first || "Full name"}">
+      <label for="num">Card number</label><input id="num" required inputmode="numeric" maxlength="23" placeholder="4242 4242 4242 4242">
+      <div class="two"><div><label for="exp">Expiry</label><input id="exp" required maxlength="5" placeholder="MM/YY"></div>
+      <div><label for="cvv">CVV</label><input id="cvv" required inputmode="numeric" maxlength="4" placeholder="123" type="password"></div></div>
+      <button id="pay" type="submit">Pay ${money(s.amount, s.currency)}</button>
+      <div class="err" id="err"></div>
+    </form>`;
+  $("num").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim(); });
+  $("exp").addEventListener("input", (e) => { let v = e.target.value.replace(/\D/g, "").slice(0, 4); e.target.value = v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v; });
+  $("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const digits = $("num").value.replace(/\D/g, "");
+    if (digits.length < 12) { $("err").textContent = "Enter a valid card number."; return; }
+    $("pay").disabled = true; $("pay").textContent = "Processing…"; $("err").textContent = "";
+    // only the last four digits leave this page
+    const r = await call("complete", { paid_card_last4: digits.slice(-4) });
+    if (r.ok) return done(r.result);
+    $("pay").disabled = false; $("pay").textContent = "Pay " + money(s.amount, s.currency);
+    $("err").textContent = r.error && r.error.code === "session_not_payable" ? "This payment link has expired. Please ask for a new one." : "Payment could not be completed. Please try again.";
+  });
+}
+
+(async () => {
+  if (!sid || !token) return state("bad", "Link incomplete", "Please use the payment link you were sent.");
+  let r; try { r = await call("get"); } catch { return state("bad", "Can't reach NovaPay", "Check your connection and try again."); }
+  if (!r.ok) return state("bad", "Payment link not valid", r.error && r.error.code === "session_not_found" ? "We couldn't find this payment. Please ask for a new link." : "Something went wrong. Please try again.");
+  const s = r.result;
+  if (s.status === "completed") return done(s);
+  if (s.status === "expired") return state("wait", "Link expired", "This payment link has expired. Please ask for a new one.");
+  if (s.status !== "pending") return state("wait", "Payment unavailable", "This payment can no longer be made.");
+  form(s);
+})();
+</script>
+</body>
+</html>

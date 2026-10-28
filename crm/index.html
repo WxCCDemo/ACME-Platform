@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACME CRM</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <img id="logo" class="logo" src="../assets/acme-telecom-logo.png" alt="ACME">
+  <span class="appname">CRM</span>
+  <form id="searchForm" class="search" autocomplete="off">
+    <input id="q" type="search" placeholder="Customer id, mobile number or email" aria-label="Search customer" autofocus>
+    <button type="submit">Search</button>
+  </form>
+  <button id="gear" class="gear" type="button" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+  <div id="empty" class="empty">
+    <h1>Find a customer</h1>
+    <p>Search by customer id, mobile number or email.</p>
+    <p class="hint" id="verticalHint"></p>
+  </div>
+</main>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h2>Settings</h2>
+    <label>Vertical
+      <select id="verticalSel"></select>
+    </label>
+    <label>CRM key
+      <input id="keyInput" type="password" placeholder="crm_..." autocomplete="off" spellcheck="false">
+    </label>
+    <p class="hint">The key is kept only in this browser. A screen-pop link can carry it as <code>#key=...</code>.</p>
+    <p id="settingsMsg" class="hint"></p>
+    <div class="row">
+      <button type="button" id="clearKey" class="ghost">Forget key</button>
+      <span class="grow"></span>
+      <button type="button" id="closeSettings" class="ghost">Cancel</button>
+      <button type="submit" value="save" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
