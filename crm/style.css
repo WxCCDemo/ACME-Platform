@@ -66,3 +66,5 @@ dialog select,dialog input{display:block;width:100%;margin-top:5px;padding:9px 1
 .row{display:flex;gap:8px;margin-top:16px;align-items:center}.grow{flex:1}
 .loading{text-align:center;padding:70px;color:var(--mute)}
 @media (max-width:640px){.top{flex-wrap:wrap}.search{order:3;flex-basis:100%;max-width:none}.tl li{grid-template-columns:1fr}}
+
+.embedded .top{position:static;padding:8px 12px}.embedded .appname{display:none}.embedded main{padding:12px}.embedded .logo{height:26px}

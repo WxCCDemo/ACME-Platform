@@ -55,7 +55,9 @@ Open the CRM with the customer already searched:
 https://wxccdemo.github.io/ACME-Platform/crm/?q=<customer id | mobile | email>#key=<CRM key>
 ```
 
-* Also accepted: `?customer=<id>`, `?mobile=<no>`, `?email=<addr>`, and `&vertical=telecom`.
+* Also accepted: `?customer=<id>`, `?ani=<number>`, `?mobile=<no>`, `?email=<addr>`, and `&vertical=telecom`.
+* The Flow Designer **Screen Pop** activity can only add `?name=value` pairs, so the key is also accepted as `?key=<CRM key>`. The page stores it, removes it from the address bar and reuses it on later pops. Full setup: `../WxCC Flows/README.md`, section 3.
+* When shown inside the Agent Desktop (a frame) the page switches to a compact layout.
 * The part after `#` is never sent to a server. The page saves the key in this browser and removes it from the address bar, so later screen pops
   can leave `#key=...` out on the same browser.
 * Prefer the **customer id** in the link rather than phone or email, so no personal details sit in a URL.

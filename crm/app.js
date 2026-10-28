@@ -19,13 +19,15 @@
   function readLink() {
     const p = new URLSearchParams(location.search);
     const h = new URLSearchParams(location.hash.replace(/^#/, ""));
-    if (h.get("key")) { state.key = h.get("key"); LS.set("crm.key", state.key); }
+    // The key can arrive as #key=... or, for the WxCC Flow Designer screen pop (which only adds ?name=value pairs), as ?key=...
+    const k = h.get("key") || p.get("key");
+    if (k) { state.key = k.trim(); LS.set("crm.key", state.key); }
     const v = p.get("vertical");
     if (v && CFG.verticals[v]) { state.vertical = v; LS.set("crm.vertical", v); }
-    const q = p.get("q") || p.get("customer") || p.get("customer_id") || p.get("mobile") || p.get("email") || "";
+    const q = p.get("q") || p.get("customer") || p.get("customer_id") || p.get("ani") || p.get("mobile") || p.get("email") || "";
     // keep the key out of the address bar and history
-    if (h.get("key")) history.replaceState(null, "", location.pathname + location.search);
-    return q.trim();
+    if (k) { p.delete("key"); const qs = p.toString(); history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "")); }
+    return q.trim();   // a "+" in an unencoded ANI arrives as a space; the service only looks at the digits
   }
 
   // ---- branding / vertical -----------------------------------------------------
@@ -171,6 +173,9 @@
   }
 
   $("searchForm").addEventListener("submit", (e) => { e.preventDefault(); search($("q").value); });
+
+  // Inside the Agent Desktop (iframe) use the compact layout.
+  try { if (window.self !== window.top) document.body.classList.add("embedded"); } catch { document.body.classList.add("embedded"); }
 
   // ---- start ------------------------------------------------------------------------------
   const first = readLink();
