@@ -126,6 +126,13 @@
 
     const offers = (d.offers || []).length ? d.offers.map((o) => `<div class="offer"><b>${esc(o.headline)}</b>${esc(o.description || "")}<br><span class="muted">${o.price != null ? money(o.price, cur) + " · " : ""}valid until ${date(o.valid_until)}</span></div>`).join("") : `<p class="muted">No offers.</p>`;
 
+    // Home broadband (customer_360 data.broadband): plan, service address, status. No bills for broadband yet.
+    const BB_ST = { fault: "open", degraded: "in_progress", active: "paid" };
+    const bb = (d.broadband || []).length ? `<div class="panel"><h3>Home broadband</h3>${d.broadband.map((b) => `<dl>
+        <dt>Plan</dt><dd>${esc(b.plan_name)}</dd>
+        <dt>Service address</dt><dd>${esc(b.service_address || "–")}</dd>
+        <dt>Status</dt><dd><span class="st ${BB_ST[b.status] || ""}">${label(b.status)}</span></dd></dl>`).join("")}</div>` : "";
+
     const out = (d.outages || []).length ? `<div class="panel"><h3>Network outage in area</h3>${d.outages.map((o) => `<p><b>${esc(o.area || "Outage")}</b> <span class="st open">${label(o.status)}</span><br>${esc(o.description || "")}<br><span class="muted">Since ${when(o.started_at)}${o.eta ? " · ETA " + when(o.eta) : ""}</span></p>`).join("")}</div>` : "";
 
     const tl = (r.interactions || []).length ? `<ul class="tl">${r.interactions.map((i) =>
@@ -140,6 +147,7 @@
       <div class="cards">${cards}</div>
       <div class="grid">
         <div class="panel"><h3>Plan & line</h3>${plan}</div>
+        ${bb}
         <div class="panel"><h3>Usage this month</h3>${usage}</div>
         <div class="panel"><h3>Latest bill</h3>${billHtml}</div>
         <div class="panel"><h3>Offers</h3>${offers}</div>

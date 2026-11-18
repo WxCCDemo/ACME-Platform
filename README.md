@@ -1,7 +1,7 @@
 # ACME Platform CRM
 
 Static CRM site for the ACME Platform demo. Search a customer by **customer id, mobile number (mobile_no, mobile_no2 or the telecom line number) or email**
-and see the customer 360: profile, plan, usage, latest bill, offers, outages, cases and the interaction timeline
+and see the customer 360: profile, mobile plan, home broadband (plan, address, status), usage, latest mobile bill, offers, outages, cases and the interaction timeline
 (AI Agent, human agent, app). A gear icon opens **Settings** where the vertical is selected (Telecom for now).
 
 This folder is a git repo (remote: GitHub `WxCCDemo/ACME-Platform`, renamed from `ACME-Telecom`) and is published with GitHub Pages.
