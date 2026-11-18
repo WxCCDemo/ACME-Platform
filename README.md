@@ -7,7 +7,7 @@ and see the customer 360: profile, plan, usage, latest bill, offers, outages, ca
 This folder is a git repo (remote: GitHub `WxCCDemo/ACME-Platform`, renamed from `ACME-Telecom`) and is published with GitHub Pages.
 The same repo also hosts the NovaPay payment page and the branding assets.
 
-_Last updated: 2026-10-28_
+_Last updated: 2026-11-18_
 
 ## Layout
 
@@ -26,8 +26,9 @@ Live address once Pages is on: `https://wxccdemo.github.io/ACME-Platform/crm/`
 Browser (this site)  --Bearer crm_key-->  Edge Function crm-api  -->  platform.api_call  -->  telecom handlers
 ```
 
-* The page holds **no secret**. `crm-api` (source: `../MCP/crm-api/index.ts`) is read-only: it can only run `lookup_customer`,
-  `customer_360`, `list_cases` and `list_interactions`, whatever the caller sends.
+* The page holds **no secret**. `crm-api` (source: `../MCP/crm-api/index.ts`) can only run `lookup_customer`,
+  `customer_360`, `list_cases`, `list_interactions` and `list_proactive`, whatever the caller sends. Its one write is
+  **send_proactive** (see "Proactive WhatsApp" below).
 * Access is a **CRM key** (starts `crm_`, stored hashed in `platform.api_clients` as `crm-telecom`, bound to the `telecom` vertical).
   The key itself is in `../MCP/tokens.env` (private, not in this repo).
 * The search is exact match only: no listing or browsing of customers.
@@ -102,3 +103,27 @@ Then put the new key in `../MCP/tokens.env` and in the screen-pop link in the Wx
 
 * Written read-only on purpose. Case creation and updates stay with the AI Agent / AI Assistant through the MCP server.
 * The CRM shows `churn risk` and similar fields because it is the human-agent view; the customer-facing AI Agent tools do not return them.
+
+## Proactive WhatsApp (Notification / Offer / Reminder)
+
+Added 18 Nov 2026. The Customer 360 has a **Proactive WhatsApp** panel (next to Offers):
+
+1. Pick **Notification** (roaming alert), **Offer** (Roaming Asia 10-day pack) or **Reminder** (pack reminder). A preview shows.
+2. Click **Send WhatsApp**, then click again to confirm (two clicks, because a browser confirm box can be blocked inside the Agent Desktop).
+3. The status line says sent or failed; **Recently sent** lists the last 10 for the customer.
+
+How it works:
+
+```
+CRM page --Bearer crm_key, {send_proactive:{customer_id, message_type}}--> crm-api
+   crm-api: lookup_customer -> POST {Name, Phone, EmailId:"", messageType} to the Connect webhook
+            https://hooks.sg.webexconnect.io/events/7LHJ6D9LSW (flow Telecom_Proactive_Notification)
+          -> log_proactive (platform.proactive_notifications) -> list_proactive
+```
+
+* The name and number come from the customer record, never from the page. WhatsApp number = `mobile_no`, else `mobile_no2`
+  (Christopher Lee, id 4: +65 8741 4102).
+* The webhook URL lives only in `crm-api` (`PROACTIVE_WEBHOOKS`, one per vertical). The panel is hidden for a vertical without one.
+* The preview texts are in `crm/config.js` (`proactive`). The real WhatsApp messages are built by the Connect flow: keep the two in step.
+* Journey events (Proactive notice sent ...) are posted by the Connect flow to JDS, not by the CRM.
+* DB: `DB/28_proactive_notifications.sql` (table `platform.proactive_notifications`, actions `log_proactive`, `list_proactive`).

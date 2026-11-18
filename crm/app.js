@@ -143,10 +143,65 @@
         <div class="panel"><h3>Usage this month</h3>${usage}</div>
         <div class="panel"><h3>Latest bill</h3>${billHtml}</div>
         <div class="panel"><h3>Offers</h3>${offers}</div>
+        ${proactivePanel(r)}
         ${out}
         <div class="panel wide"><h3>Cases</h3>${cases}</div>
         <div class="panel wide"><h3>Interaction timeline</h3>${tl}</div>
       </div>`);
+    bindProactive(r);
+  }
+
+  // ---- proactive WhatsApp (Notification / Offer / Reminder) --------------------------------
+  // crm-api sends it: the Connect webhook URL stays on the server, the number comes from the customer record,
+  // and every send is logged (platform.proactive_notifications). Texts to preview are in config.js.
+  const PRO_TYPES = ["Notification", "Offer", "Reminder"];
+  const proList = (list) => (list || []).length ? `<ul class="sent">${list.map((n) =>
+    `<li><span>${esc(n.message_type)}</span><span class="muted">${when(n.created_at)}</span><span class="st ${n.status === "sent" ? "paid" : "unpaid"}">${esc(n.status)}</span></li>`).join("")}</ul>`
+    : `<p class="muted">Nothing sent yet.</p>`;
+
+  function proactivePanel(r) {
+    const tpl = (CFG.verticals[state.vertical].proactive || {});
+    if (!r.proactive_enabled || !Object.keys(tpl).length) return "";
+    const wa = r.whatsapp_number;
+    return `<div class="panel" id="proPanel"><h3>Proactive WhatsApp</h3>
+      <p class="hint" style="margin-top:0">To <b>${wa ? esc(fmtNo(wa)) : "no mobile number"}</b></p>
+      <div class="types">${PRO_TYPES.filter((t) => tpl[t]).map((t) => `<button type="button" class="ghost ptype" data-type="${t}">${t}</button>`).join("")}</div>
+      <div id="proPreview" class="preview muted">Choose Notification, Offer or Reminder to preview the message.</div>
+      <button type="button" id="proSend" class="primary block" disabled>Send WhatsApp</button>
+      <div id="proStatus" class="pstatus" hidden></div>
+      <h4>Recently sent</h4><div id="proSent">${proList(r.proactive)}</div>
+    </div>`;
+  }
+
+  function bindProactive(r) {
+    const panel = $("proPanel"); if (!panel) return;
+    const tpl = CFG.verticals[state.vertical].proactive || {}, cid = r.customer.customer_id, wa = r.whatsapp_number;
+    const name = r.customer.first_name || r.customer.name || "";
+    let type = "", armed = false;
+    const send = $("proSend"), status = (cls, text) => { const s = $("proStatus"); s.className = "pstatus " + cls; s.textContent = text; s.hidden = false; };
+    const reset = () => { armed = false; send.textContent = "Send WhatsApp"; send.classList.remove("confirm"); };
+
+    panel.querySelectorAll(".ptype").forEach((b) => b.onclick = () => {
+      type = b.dataset.type;
+      panel.querySelectorAll(".ptype").forEach((x) => x.classList.toggle("on", x === b));
+      $("proPreview").textContent = tpl[type].replace(/\{name\}/g, name);
+      $("proPreview").classList.remove("muted");
+      $("proStatus").hidden = true; send.disabled = !wa; reset();
+    });
+
+    // Two clicks: the first asks to confirm (a browser confirm() box can be blocked inside the Agent Desktop).
+    send.onclick = async () => {
+      if (!type || !wa) return;
+      if (!armed) { armed = true; send.textContent = `Confirm: send ${type} to ${fmtNo(wa)}`; send.classList.add("confirm"); return; }
+      send.disabled = true; send.textContent = "Sending…";
+      try {
+        const res = await api({ send_proactive: { customer_id: cid, message_type: type } });
+        if (res.body && res.body.status === "sent") status("ok", `${type} sent to ${name} on WhatsApp. Waiting for the customer to reply…`);
+        else status("err", (res.body && res.body.error && res.body.error.message) || `The ${type} could not be sent (${(res.body && res.body.status) || res.status}). Please try again.`);
+        if (res.body && res.body.proactive) $("proSent").innerHTML = proList(res.body.proactive);
+      } catch { status("err", "Can't reach the CRM service. Check your connection and try again."); }
+      send.disabled = false; reset();
+    };
   }
 
   // ---- search ------------------------------------------------------------------------

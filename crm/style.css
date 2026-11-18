@@ -68,3 +68,13 @@ dialog select,dialog input{display:block;width:100%;margin-top:5px;padding:9px 1
 @media (max-width:640px){.top{flex-wrap:wrap}.search{order:3;flex-basis:100%;max-width:none}.tl li{grid-template-columns:1fr}}
 
 .embedded .top{position:static;padding:8px 12px}.embedded .appname{display:none}.embedded main{padding:12px}.embedded .logo{height:26px}
+
+/* proactive WhatsApp panel */
+.types{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.ptype{padding:6px 14px;font-size:13px}.ptype.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.preview{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;white-space:pre-line;font-size:13px}
+.block{display:block;width:100%}.primary:disabled{opacity:.45;cursor:default}
+.primary.confirm{background:var(--warn)}
+.pstatus{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:13px}.pstatus.ok{background:#e1f6ec;color:var(--ok)}.pstatus.err{background:#fde8eb;color:var(--bad)}
+.panel h4{margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute)}
+.sent{list-style:none;margin:0;padding:0}.sent li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}.sent li:last-child{border:0}
