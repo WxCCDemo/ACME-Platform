@@ -89,6 +89,9 @@
     return (primary ? `<span><b>Primary</b> ${esc(fmtNo(primary))}</span>` : "") + others.map((n) => `<span><b>Secondary</b> ${esc(fmtNo(n))}</span>`).join("");
   }
 
+  // A reference read out for voice ("C S 261114 00044") shown in its written form (CS-261114-00044).
+  const fixRefs = (t) => String(t ?? "").replace(/\b([A-Z])\s?([A-Z])[\s-]+(\d{6})[\s-]+(\d{4,6})\b/g, "$1$2-$3-$4");
+
   // ---- render ----------------------------------------------------------------------
   function show(html) { $("main").innerHTML = html; }
 
@@ -122,7 +125,7 @@
       <table style="margin-top:10px"><tbody>${(bill.lines || []).map((l) => `<tr><td>${esc(l.description)}</td><td class="n">${money(l.amount, cur)}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">No bills.</p>`;
 
     const cases = (r.cases || []).length ? `<table><thead><tr><th>Case</th><th>Type</th><th>Status</th><th>Raised</th></tr></thead><tbody>${r.cases.map((x) =>
-      `<tr><td><b>${esc(x.case_reference)}</b><br><span class="muted">${esc(x.description || "")}</span></td><td>${label(x.request_type)}</td><td><span class="st ${esc(x.status)}">${label(x.status)}</span></td><td>${when(x.raised_at)}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">No cases.</p>`;
+      `<tr><td><b>${esc(x.case_reference)}</b><br><span class="muted">${esc(fixRefs(x.description))}</span></td><td>${label(x.request_type)}</td><td><span class="st ${esc(x.status)}">${label(x.status)}</span></td><td>${when(x.raised_at)}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">No cases.</p>`;
 
     const offers = (d.offers || []).length ? d.offers.map((o) => `<div class="offer"><b>${esc(o.headline)}</b>${esc(o.description || "")}<br><span class="muted">${o.price != null ? money(o.price, cur) + " · " : ""}valid until ${date(o.valid_until)}</span></div>`).join("") : `<p class="muted">No offers.</p>`;
 
@@ -135,8 +138,13 @@
 
     const out = (d.outages || []).length ? `<div class="panel"><h3>Network outage in area</h3>${d.outages.map((o) => `<p><b>${esc(o.area || "Outage")}</b> <span class="st open">${label(o.status)}</span><br>${esc(o.description || "")}<br><span class="muted">Since ${when(o.started_at)}${o.eta ? " · ETA " + when(o.eta) : ""}</span></p>`).join("")}</div>` : "";
 
-    const tl = (r.interactions || []).length ? `<ul class="tl">${r.interactions.map((i) =>
-      `<li><div class="t">${when(i.started_at)}<br><span class="by">${label(i.handled_by)}</span></div><div><b>${label(i.intent)}</b> · ${label(i.channel)} · ${label(i.outcome)}<br>${esc(i.summary || "")}</div></li>`).join("")}</ul>` : `<p class="muted">No interactions yet.</p>`;
+    // Title = the intent, or the channel when no intent was saved; then channel and outcome, skipping empty parts.
+    const CH = { whatsapp: "WhatsApp chat", voice: "Voice call", app: "App chat", app_chat: "App chat", email: "Email" };
+    const tl = (r.interactions || []).length ? `<ul class="tl">${r.interactions.map((i) => {
+      const title = i.intent ? label(i.intent) : esc(CH[String(i.channel || "").toLowerCase()] || label(i.channel) || "Contact");
+      const meta = [i.intent ? label(i.channel) : "", label(i.outcome)].filter(Boolean).join(" · ");
+      return `<li><div class="t">${when(i.started_at)}<br><span class="by">${label(i.handled_by)}</span></div><div><b>${title}</b>${meta ? " · " + meta : ""}<br>${esc(fixRefs(i.summary))}</div></li>`;
+    }).join("")}</ul>` : `<p class="muted">No interactions yet.</p>`;
 
     show(`
       <section class="who"><div class="avatar">${esc(ini)}</div>
